@@ -1,0 +1,23 @@
+TARGET ?= ps2_usb_laser
+MCU = atmega32u4
+CONFIG_H = config_laser.h
+BOOTLOADER_SIZE = 4096
+
+BOOTMAGIC_ENABLE ?= no
+MOUSEKEY_ENABLE ?= yes
+EXTRAKEY_ENABLE ?= yes
+CONSOLE_ENABLE ?= yes
+COMMAND_ENABLE ?= yes
+NKRO_ENABLE ?= yes
+
+PS2_USE_USART = no
+PS2_USE_INT = yes
+PS2_USE_BUSYWAIT = no
+
+EXTRA_BUTTONS_ENABLE = yes
+
+ifeq ($(EXTRA_BUTTONS_ENABLE), yes)
+    OPT_DEFS += -DEXTRA_BUTTONS_ENABLE
+endif
+
+include Makefile

@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdint.h>
 #include <stdbool.h>
+
 #include "action.h"
 #include "print.h"
 #include "util.h"
@@ -26,10 +27,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "led.h"
 #include "matrix.h"
 
+#ifdef EXTRA_BUTTONS_ENABLE
+
+#include <avr/io.h>
+#include "timer.h"
+
+#ifndef DEBOUNCE
+	#define DEBOUNCE 5
+#endif
+
+static uint8_t buttons = 0;
+static uint8_t buttons_debouncing = 0;
+static bool debouncing = 0;
+static uint16_t debouncing_time = 0;
+
+#endif
+
+
+
+
 
 static void matrix_make(uint8_t code);
 static void matrix_break(uint8_t code);
-
 
 /*
  * Matrix Array usage:
@@ -66,6 +85,23 @@ static uint8_t matrix[MATRIX_ROWS];
 
 static bool is_modified = false;
 
+#ifdef EXTRA_BUTTONS_ENABLE
+static void init_buttons()
+{
+	//input with pull-up resistor
+	BUTTON_ONE_DDR  &= ~(1<<BUTTON_ONE_DATA_BIT);
+	BUTTON_ONE_PORT |=  (1<<BUTTON_ONE_DATA_BIT);
+	BUTTON_TWO_DDR  &= ~(1<<BUTTON_TWO_DATA_BIT);
+	BUTTON_TWO_PORT |=  (1<<BUTTON_TWO_DATA_BIT);
+}
+
+static uint8_t read_buttons()
+{
+	return (BUTTON_ONE_PIN & (1 << BUTTON_ONE_DATA_BIT) ? 0 : (1 << 0)) |
+	       (BUTTON_TWO_PIN & (1 << BUTTON_TWO_DATA_BIT) ? 0 : (1 << 1));
+}
+
+#endif
 
 void matrix_init(void)
 {
@@ -74,6 +110,10 @@ void matrix_init(void)
 
     // initialize matrix state: all keys off
     for (uint8_t i=0; i < MATRIX_ROWS; i++) matrix[i] = 0x00;
+
+#ifdef EXTRA_BUTTONS_ENABLE
+    init_buttons();
+#endif
 
     return;
 }
@@ -379,6 +419,38 @@ uint8_t matrix_scan(void)
         xprintf("Resend: %02X\n", ret);
     }
 */
+#ifdef EXTRA_BUTTONS_ENABLE
+
+    uint8_t btns = read_buttons();
+    
+    if (buttons_debouncing != btns)
+    {
+	    buttons_debouncing = btns;
+	    debouncing = true;
+	    debouncing_time = timer_read();
+	    print(".");
+    }
+
+    if (debouncing && (timer_elapsed(debouncing_time) > DEBOUNCE))
+    {
+	    buttons = buttons_debouncing;
+	    debouncing = false;
+
+	    if (buttons & (1<<0))
+		    matrix_make(0x08);
+	    else
+		    matrix_break(0x08);
+
+	    if (buttons & (1<<1))
+		    matrix_make(0x10);
+	    else
+		    matrix_break(0x10);
+
+	    print("xxx\n");
+    }
+
+#endif
+
     return 1;
 }
 

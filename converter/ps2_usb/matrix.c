@@ -460,8 +460,8 @@ uint8_t matrix_scan(void)
 #endif
 
 #ifdef THUMBSTICK_ENABLE
-    int32_t x = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL7);
-    int32_t y = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL6);
+    int16_t x = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL7);
+    int16_t y = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL6);
 
     dprintf("x = %d, y = %d\n", x, y);
 #endif

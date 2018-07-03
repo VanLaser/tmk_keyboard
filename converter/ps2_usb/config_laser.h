@@ -109,5 +109,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define BUTTON_TWO_DATA_BIT 7
 #endif
 
+#ifdef THUMBSTICK_ENABLE
+#define MOUSEKEY_MAX_SPEED 5
+#define MOUSEKEY_ANALOG_XYVH
+#endif
+
 #endif
 

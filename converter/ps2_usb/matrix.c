@@ -43,6 +43,33 @@ static uint16_t debouncing_time = 0;
 
 #endif
 
+#ifdef THUMBSTICK_ENABLE
+
+#include "mousekey.h"
+
+#define STICK_MAX 1023
+#define STICK_MIN 0
+#define STICK_CENTER 512
+#define STICK_SLOP 64
+
+static int8_t map_value(int16_t v)
+{
+	v -= STICK_CENTER;
+	int sign = 1;
+	if (v < 0)
+	{
+		sign = -1;
+		v = -v;
+	}
+
+	if (v < STICK_SLOP)
+		return 0;
+
+	return (sign * mk_max_speed * v) / 320;
+}
+
+#endif
+
 static void matrix_make(uint8_t code);
 static void matrix_break(uint8_t code);
 
@@ -100,8 +127,38 @@ static uint8_t read_buttons()
 #endif
 
 #ifdef THUMBSTICK_ENABLE
+
 #include "LUFA/Drivers/Peripheral/ADC.h"
 
+static void thumbstick_read(uint8_t chanmask, int8_t *value, int8_t *last_value,
+		bool *dirty)
+{
+	*value = map_value(ADC_GetChannelReading(ADC_REFERENCE_AVCC | chanmask));
+
+	if (*value != *last_value) {
+		*last_value = *value;
+		*dirty = true;
+	}
+}
+
+void process_thumbstick(void)
+{
+	// Cache the prior read to avoid over-reporting mouse movement
+	static int8_t last_x = 0;
+	static int8_t last_y = 0;
+	int8_t x;
+	int8_t y;
+
+	bool dirty = false;
+	thumbstick_read(ADC_CHANNEL7, &x, &last_x, &dirty);
+	thumbstick_read(ADC_CHANNEL6, &y, &last_y, &dirty);
+
+	if (dirty || x || y) {
+		mousekey_set_xyvh(x, -y, 0, 0);
+		mousekey_send();
+		dprintf("x = %d, y = %d\n", x, y);
+	}
+}
 
 #endif
 
@@ -125,6 +182,8 @@ void matrix_init(void)
 
     return;
 }
+
+
 
 /*
  * PS/2 Scan Code Set 2: Exceptional Handling
@@ -460,10 +519,7 @@ uint8_t matrix_scan(void)
 #endif
 
 #ifdef THUMBSTICK_ENABLE
-    int16_t x = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL7);
-    int16_t y = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL6);
-
-    dprintf("x = %d, y = %d\n", x, y);
+    process_thumbstick();
 #endif
 
     return 1;

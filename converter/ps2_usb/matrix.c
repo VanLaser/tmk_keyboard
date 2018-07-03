@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 static uint8_t buttons = 0;
 static uint8_t buttons_debouncing = 0;
-static bool debouncing = 0;
+static bool debouncing = false;
 static uint16_t debouncing_time = 0;
 
 #endif

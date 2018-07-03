@@ -43,10 +43,6 @@ static uint16_t debouncing_time = 0;
 
 #endif
 
-
-
-
-
 static void matrix_make(uint8_t code);
 static void matrix_break(uint8_t code);
 
@@ -103,6 +99,12 @@ static uint8_t read_buttons()
 
 #endif
 
+#ifdef THUMBSTICK_ENABLE
+#include "LUFA/Drivers/Peripheral/ADC.h"
+
+
+#endif
+
 void matrix_init(void)
 {
     debug_enable = true;
@@ -113,6 +115,12 @@ void matrix_init(void)
 
 #ifdef EXTRA_BUTTONS_ENABLE
     init_buttons();
+#endif
+
+#ifdef THUMBSTICK_ENABLE
+    ADC_Init(ADC_SINGLE_CONVERSION | ADC_PRESCALE_32);
+    ADC_SetupChannel(6); // A1 -> PF6
+    ADC_SetupChannel(7); // A0 -> PF7
 #endif
 
     return;
@@ -449,6 +457,13 @@ uint8_t matrix_scan(void)
 	    print("xxx\n");
     }
 
+#endif
+
+#ifdef THUMBSTICK_ENABLE
+    int32_t x = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL7);
+    int32_t y = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL6);
+
+    dprintf("x = %d, y = %d\n", x, y);
 #endif
 
     return 1;
